@@ -1,0 +1,734 @@
+import java.util.*;
+import java.util.InputMismatchException; // Import for exception handling
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        Market market = new Market();
+        User user = new User("Demo User", 100000.0); // 1 lakh starting balance
+// Initialize market with stocks (add to arraylist)
+        market.initializeStocks();
+// Main menu loop
+        boolean running = true;
+        while (running) {
+//MAIN MENU
+            System.out.println("\n╔════════════════════════════════════╗");
+            System.out.println("║ STOCK MARKET SIMULATION            ║");
+            System.out.println("╚════════════════════════════════════╝");
+                    System.out.println("1. Market Operations");
+            System.out.println("2. Portfolio & Account");
+            System.out.println("3. Search & Watchlist");
+            System.out.println("4. Trade History");
+            System.out.println("5. Analytics & Indices");
+            System.out.println("6. Exit");
+            int choice = getSafeIntInput(sc); // Use safe input
+            switch (choice) {
+                case 1:
+                    handleMarketOperations(sc, market);
+                    break;
+                case 2:
+                    handlePortfolioAccount(sc, market, user);
+                    break;
+                case 3:
+                    handleSearchWatchlist(sc, market, user);
+                    break;
+                case 4:
+                    handleTradeHistory(sc, user);
+                    break;
+                case 5:
+                    handleAnalytics(sc, market, user);
+                    break;
+                case 6:
+                    running = false;
+                    System.out.println("Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+        sc.close();
+    }
+    // Helper method for safe integer input
+    static int getSafeIntInput(Scanner sc) {
+        while (true) {
+            try {
+                System.out.print("→ ");
+                int choice = sc.nextInt();
+                sc.nextLine(); // Consume the newline character
+                return choice;
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input! Please enter a number.");
+                sc.nextLine(); // Consume the invalid text input
+            }
+        }
+    }
+    // Overloaded helper method for safe integer input with a custom prompt
+    static int getSafeIntInput(Scanner sc, String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                int input = sc.nextInt();
+                sc.nextLine(); // Consume the newline character
+                return input;
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input! Please enter a number.");
+                sc.nextLine(); // Consume the invalid text input
+            }
+        }
+    }
+    static void handleMarketOperations(Scanner sc, Market market) {
+        int choice;
+        do {
+            System.out.println("\n--- Market Operations ---");
+            System.out.println("1. View Market");
+            System.out.println("2. Sort Companies");
+            System.out.println("3. Market Tick Simulation");
+            System.out.println("4. Return to Main Menu");
+            choice = getSafeIntInput(sc);
+            switch (choice) {
+                case 1:
+                    market.displayMarket();
+                    break;
+                case 2:
+                    System.out.println("Sort by: 1.Price 2.Name 3.%Change");
+                    int sortChoice = getSafeIntInput(sc);
+                    market.sortCompanies(sortChoice);
+                    market.displayMarket();
+                    break;
+                case 3:
+                    market.simulateTick();
+                    System.out.println("Market tick simulated!");
+                    break;
+                case 4:
+                    System.out.println("Returning to Main Menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+                    break;
+            }
+        }
+        while (choice != 4);
+    }
+    static void handlePortfolioAccount(Scanner sc, Market market, User user) {
+        int choice;
+        do {
+            System.out.println("\n--- Portfolio & Account ---");
+            System.out.println("1. Buy Stock");
+            System.out.println("2. Sell Stock");
+            System.out.println("3. Undo Last Trade");
+            System.out.println("4. View Portfolio");
+            System.out.println("5. Check Dividends");
+            System.out.println("6. View Balance");
+            System.out.println("7. Return to Main Menu");
+            choice = getSafeIntInput(sc);
+            switch (choice) {
+                case 1: //BUY STOCK
+                    int buyId = getSafeIntInput(sc, "Enter Stock ID to buy: ");
+                    int buyQty = getSafeIntInput(sc, "Enter quantity: ");
+                    Stock stock = market.findStock(buyId);
+                    if (stock != null) {
+                        user.buyStock(stock, buyQty);
+                    } else {
+                        System.out.println("Stock not found!");
+                    }
+                    break;
+                case 2: // SELL STOCK
+                    int sellId = getSafeIntInput(sc, "Enter Stock ID to sell: ");
+                    int sellQty = getSafeIntInput(sc, "Enter quantity: ");
+                    user.sellStock(sellId, sellQty, market);
+                    break;
+                case 3:
+                    user.undoLastTrade();
+                    break;
+                case 4:
+                    user.viewPortfolio(market);
+                    break;
+                case 5:
+                    user.calculateDividends(market);
+                    user.receiveDividend();
+                    break;
+                case 6:
+                    System.out.printf("Balance: ₹%.2f\n", user.balance);
+                    break;
+                case 7:
+                    System.out.println("Returning to Main Menu");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+                    break;
+            }
+        }
+        while (choice != 7);
+    }
+    static void handleSearchWatchlist(Scanner sc, Market market, User user) {
+        int choice;
+        do {
+            System.out.println("\n--- Search & Watchlist ---");
+            System.out.println("1. Search Company");
+            System.out.println("2. Add to Watchlist");
+            System.out.println("3. View Watchlist");
+            System.out.println("4. Return to Main Menu");
+            choice = getSafeIntInput(sc);
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter company name: ");
+                    String search = sc.nextLine();
+                    market.searchCompany(search);
+                    break;
+                case 2:
+                    int wId = getSafeIntInput(sc, "Enter Stock ID: ");
+                    Stock s = market.findStock(wId);
+                    if (s != null) user.watchlist.addStock(s);
+                    else System.out.println("Stock not found.");
+                    break;
+                case 3:
+                    user.watchlist.display(market);
+                    break;
+                case 4:
+                    System.out.println("Returning to Main Menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+                    break;
+            }
+        }
+        while (choice != 4);
+    }
+    static void handleTradeHistory(Scanner sc, User user) {
+        System.out.println("\n--- Trade History ---");
+        user.displayTradeHistory();
+    }
+    static void handleAnalytics(Scanner sc, Market market, User user) {
+        int choice;
+        do {
+            System.out.println("\n--- Analytics & Indices ---");
+            System.out.println("1. Top Gainers");
+            System.out.println("2. Top Losers");
+            System.out.println("3. Market Indices (by Sector)");
+            System.out.println("4. Portfolio Analytics");
+            System.out.println("5. Returning to Main Menu");
+            choice = getSafeIntInput(sc);
+            switch (choice) {
+                case 1:
+                    market.showTopGainers();
+                    break;
+                case 2:
+                    market.showTopLosers();
+                    break;
+                case 3:
+                    market.showSectorIndices();
+                    break;
+                case 4:
+                    user.portfolio.showAnalytics(market);
+                    break;
+                case 5:
+                    System.out.println("Returning to Main Menu");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+                    break;
+            }
+        }
+        while (choice != 5);
+    }
+}
+// ============== STOCK CLASS ==============
+class Stock {
+    int stockId;
+    String name;
+    String sector;
+    double currentPrice;
+    double previousPrice;
+    double percentChange;
+    double totalDividend;
+    double totalShares;
+    Stock(int stockId, String name, String sector, double currentPrice, double
+                  previousPrice,
+          double totalDividend, double totalShares) {
+        this.stockId = stockId;
+        this.name = name;
+        this.sector = sector;
+        this.currentPrice = currentPrice;
+        this.previousPrice = previousPrice;
+        this.totalDividend = totalDividend;
+        this.totalShares = totalShares;
+        this.percentChange = calculatePercentChange();
+    }
+    private double calculatePercentChange() {
+        if (previousPrice == 0) return 0;
+        return ((currentPrice - previousPrice) / previousPrice) * 100;
+    }
+    double getMarketCap() {
+        return currentPrice * totalShares;
+    }
+    double getDividendPerShare() {
+        if (totalShares <= 0) return 0.0;
+        return totalDividend / totalShares;
+    }
+    void simulatePriceChange() {
+        Random rand = new Random();
+        previousPrice = currentPrice;
+        double volatility;
+        if (sector.contains("information technology")) {
+            volatility = 8;
+        } else if (sector.contains("fmcg") || sector.contains("pharmaceuticals")) {
+//fmcg - fast moving consumer goods
+            volatility = 3;
+        } else if (sector.contains("automobile") || sector.contains("energy")) {
+            volatility = 5;
+        } else if (sector.contains("banking")) {
+            volatility = 6;
+        } else {
+            volatility = 4;
+        }
+        double change = (rand.nextDouble() * 2 * volatility) - volatility;
+        currentPrice *= (1 + change / 100);
+        if (currentPrice < 0.01) {
+            currentPrice = 0.01;
+        }
+        currentPrice = Math.round(currentPrice * 100.0) / 100.0; // 2 decimal places
+        percentChange = calculatePercentChange();
+    }
+    void display() {
+        String GREEN = "\u001B[32m";
+        String RED = "\u001B[31m";
+        String RESET = "\u001B[0m";
+        boolean isUp = percentChange >= 0;
+        String arrow = isUp ? "↑" : "↓";
+        String color = isUp ? GREEN : RED;
+        System.out.printf("[%d] %s (%s)\n", stockId, name, sector);
+        System.out.printf("Price: ₹ %.2f | Prev: ₹ %.2f | Change: %s%.2f%%%s %s |Div/Share: ₹ %.2f\n\n",
+        currentPrice, previousPrice, color, percentChange, RESET, arrow,
+                getDividendPerShare());
+    }
+}
+// ============== MARKET CLASS ==============
+class Market {
+    ArrayList<Stock> stocks;
+    int tickCount;
+    Market() {
+        stocks = new ArrayList<>();
+        tickCount = 0;
+    }
+    void initializeStocks() {
+        stocks.add(new Stock(1, "Reliance Industries Ltd", "Energy & Conglomerate", 2500.00, 2450.00, 933, 15.00));
+                stocks.add(new Stock(2, "HDFC Bank Ltd", "Banking & Financials", 1650.00,
+                        1620.00, 553, 5.60));
+        stocks.add(new Stock(3, "Tata Consultancy Services Ltd", "Information Technology", 3600.00, 3550.00, 360, 22.00));
+                stocks.add(new Stock(4, "ICICI Bank Ltd", "Banking & Financials", 1150.00,
+                        1130.00, 654, 4.20));
+        stocks.add(new Stock(5, "Bharti Airtel Ltd", "Telecommunications", 900.00,
+                880.00, 570, 0.90));
+        stocks.add(new Stock(6, "State Bank of India", "Banking & Financials",
+                720.00, 700.00, 920, 2.50));
+        stocks.add(new Stock(7, "Kotak Mahindra Bank Ltd", "Banking & Financials",
+                1500.00, 1460.00, 190, 3.00));
+        stocks.add(new Stock(8, "Infosys Ltd", "Information Technology", 1550.00,
+                1520.00, 360, 18.00));
+        stocks.add(new Stock(9, "Hindustan Unilever Ltd", "FMCG", 3000.00,
+                2950.00, 238, 30.00));
+        stocks.add(new Stock(10, "ITC Ltd", "FMCG", 450.00, 440.00, 1250, 4.40));
+        stocks.add(new Stock(11, "Larsen & Toubro Ltd", "Engineering & Infrastructure", 1800.00, 1760.00, 142, 12.00));
+                stocks.add(new Stock(12, "Maruti Suzuki India Ltd", "Automobile", 10200.00,
+                        10000.00, 31, 50.00));
+        stocks.add(new Stock(13, "Asian Paints Ltd", "Consumer Durables",
+                3400.00, 3320.00, 96, 14.00));
+        stocks.add(new Stock(14, "Mahindra & Mahindra Ltd", "Automobile",
+                1150.00, 1130.00, 120, 6.00));
+        stocks.add(new Stock(15, "Wipro Ltd", "Information Technology", 500.00,
+                490.00, 610, 2.20));
+        stocks.add(new Stock(16, "Titan Company Ltd", "Jewellery & Consumer",
+                3200.00, 3100.00, 88, 10.00));
+        stocks.add(new Stock(17, "Bajaj Finance Ltd", "Financial Services", 7200.00,
+                7000.00, 60, 20.00));
+        stocks.add(new Stock(18, "Nestlé India Ltd", "FMCG", 2500.00, 2430.00,
+                9.7, 36.00));
+        stocks.add(new Stock(19, "UltraTech Cement Ltd", "Cement & Building Materials", 10500.00, 10200.00, 34, 35.00));
+                stocks.add(new Stock(20, "Sun Pharma Industries Ltd", "Pharmaceuticals",
+                        1250.00, 1220.00, 415, 3.00));
+        stocks.add(new Stock(21, "Power Grid Corporation of India Ltd", "Power & Energy", 270.00, 260.00, 2095, 2.00));
+                stocks.add(new Stock(22, "NTPC Ltd", "Power & Energy", 310.00, 300.00,
+                        969, 7.00));
+        stocks.add(new Stock(23, "Hindalco Industries Ltd", "Metals & Mining",
+                560.00, 540.00, 223, 3.50));
+        stocks.add(new Stock(24, "Tata Steel Ltd", "Metals & Mining", 140.00,
+                135.00, 1221, 3.00));
+        stocks.add(new Stock(25, "JSW Steel Ltd", "Metals & Mining", 860.00,
+                845.00, 241, 2.80));
+        stocks.add(new Stock(26, "Oil & Natural Gas Corporation Ltd", "Energy & Conglomerate", 230.00, 220.00, 1256, 7.50));
+                stocks.add(new Stock(27, "Coal India Ltd", "Energy & Mining", 380.00,
+                        370.00, 6136, 4.25));
+        stocks.add(new Stock(28, "Adani Green Energy Ltd", "Renewable Energy",
+                1000.00, 950.00, 159, 2.50));
+        stocks.add(new Stock(29, "Adani Ports & SEZ Ltd", "Logistics & Ports",
+                1300.00, 1260.00, 435, 5.00));
+        stocks.add(new Stock(30, "DLF Ltd", "Real Estate", 830.00, 810.00, 497,
+                3.00));
+        stocks.add(new Stock(31, "Bajaj Auto Ltd", "Automobile", 6800.00, 6600.00,
+                289, 35.00));
+        stocks.add(new Stock(32, "Hero MotoCorp Ltd", "Automobile", 5200.00,
+                5100.00, 199, 28.00));
+        stocks.add(new Stock(33, "Tata Motors Ltd", "Automobile", 950.00, 930.00,
+                369, 4.00));
+        stocks.add(new Stock(34, "Eicher Motors Ltd", "Automobile", 4200.00,
+                4100.00, 273, 20.00));
+        stocks.add(new Stock(35, "IndusInd Bank Ltd", "Banking & Financials",
+                1650.00, 1620.00, 164, 3.50));
+        stocks.add(new Stock(36, "Axis Bank Ltd", "Banking & Financials", 1150.00,
+                1120.00, 345, 2.50));
+        stocks.add(new Stock(37, "Bank of Baroda", "Banking & Financials", 290.00,
+                280.00, 920, 1.50));
+        stocks.add(new Stock(38, "Punjab National Bank", "Banking & Financials",
+                120.00, 118.00, 2345, 0.70));
+        stocks.add(new Stock(39, "Tech Mahindra Ltd", "Information Technology",
+                1350.00, 1320.00, 303, 10.00));
+        stocks.add(new Stock(40, "HCL Technologies Ltd", "Information Technology", 1600.00, 1570.00, 543, 12.00));
+                stocks.add(new Stock(41, "Cipla Ltd", "Pharmaceuticals", 1400.00, 1360.00,
+                        405, 5.00));
+        stocks.add(new Stock(42, "Dr. Reddy’s Laboratories Ltd", "Pharmaceuticals",
+                6150.00, 6000.00, 166, 25.00));
+        stocks.add(new Stock(43, "Divi’s Laboratories Ltd", "Pharmaceuticals",
+                3800.00, 3720.00, 66, 18.00));
+        stocks.add(new Stock(44, "Britannia Industries Ltd", "FMCG", 5200.00,
+                5100.00, 241, 22.00));
+        stocks.add(new Stock(45, "Dabur India Ltd", "FMCG", 650.00, 630.00, 1770,
+                2.50));
+        stocks.add(new Stock(46, "Godrej Consumer Products Ltd", "FMCG",
+                1200.00, 1170.00, 307, 4.00));
+        stocks.add(new Stock(47, "Adani Enterprises Ltd", "Conglomerate", 2800.00,
+                2700.00, 114, 10.00));
+        stocks.add(new Stock(48, "Avenue Supermarts Ltd (DMart)", "Retail & Consumer", 4400.00, 4300.00, 155, 20.00));
+                stocks.add(new Stock(49, "Zomato Ltd", "Food & Delivery", 180.00, 175.00,
+                        879, 0.00));
+        stocks.add(new Stock(50, "Paytm (One97 Communications Ltd)", "Fintech & Digital", 480.00, 470.00, 604, 0.00));
+    }
+    Stock findStock(int id) {
+        for (Stock s : stocks) {
+            if (s.stockId == id) return s;
+        }
+        return null;
+    }
+    void displayMarket() {
+        System.out.println("\n════════════════ MARKET ════════════════");
+        for (Stock s : stocks) {
+            s.display();
+        }
+    }
+    void simulateTick() {
+        tickCount++;
+        for (Stock s : stocks) {
+            s.simulatePriceChange(); //method to simulate change in prices of stocks
+        }
+    }
+    void sortCompanies(int criteria) {
+        switch (criteria) {
+            case 1: // Price
+                stocks.sort((a, b) -> Double.compare(b.currentPrice, a.currentPrice));
+                break;
+            case 2: // Name
+                stocks.sort((a, b) -> a.name.compareTo(b.name));
+                break;
+            case 3: // % Change
+                stocks.sort((a, b) -> Double.compare(b.percentChange,
+                        a.percentChange));
+                break;
+            default:
+                System.out.println("Invalid sort criteria.");
+                break;
+        }
+    }
+    void searchCompany(String query) {
+        System.out.println("\n--- Search Results ---");
+        boolean found = false;
+        for (Stock s : stocks) {
+            if (s.name.toLowerCase().contains(query.toLowerCase())) {
+                s.display();
+                found = true;
+            }
+        }
+        if (!found) System.out.println("No matches found.");
+    }
+    void showTopGainers() {
+        PriorityQueue<Stock> pq = new PriorityQueue<>((a, b) ->
+                Double.compare(b.percentChange, a.percentChange));
+        pq.addAll(stocks);
+        System.out.println("\nTOP 5 GAINERS");
+        for (int i = 0; i < 5 && !pq.isEmpty(); i++) {
+            pq.poll().display();
+        }
+    }
+    void showTopLosers() {
+        PriorityQueue<Stock> pq = new PriorityQueue<>((a, b) ->
+                Double.compare(a.percentChange, b.percentChange));
+        pq.addAll(stocks);
+        System.out.println("\nTOP 5 LOSERS");
+        for (int i = 0; i < 5 && !pq.isEmpty(); i++) {
+            pq.poll().display();
+        }
+    }
+    void showSectorIndices() {
+        HashMap<String, Double> sectorAvg = new HashMap<>();
+        HashMap<String, Integer> sectorCount = new HashMap<>();
+        for (Stock s : stocks) {
+            sectorAvg.put(s.sector, sectorAvg.getOrDefault(s.sector, 0.0) +
+                    s.percentChange);
+            sectorCount.put(s.sector, sectorCount.getOrDefault(s.sector, 0) + 1);
+        }
+        System.out.println("\nSECTOR INDICES");
+        for (String sector : sectorAvg.keySet()) {
+            double avg = sectorAvg.get(sector) / sectorCount.get(sector);
+            String color = avg >= 0 ? "\u001B[32m" : "\u001B[31m";
+            System.out.printf("%s: %s%.2f%%\u001B[0m\n", sector, color, avg);
+        }
+    }
+}
+//USER CLASS
+class User {
+    String name;
+    double balance;
+    Portfolio portfolio;
+    Watchlist watchlist;
+    Stack<Trade> tradeStack;
+    Queue<Dividend> dividendQueue;
+    User(String name, double balance) {
+        this.name = name;
+        this.balance = balance;
+        this.portfolio = new Portfolio();
+        this.watchlist = new Watchlist();
+        this.tradeStack = new Stack<>();
+        this.dividendQueue = new LinkedList<>();
+    }
+    void buyStock(Stock stock, int quantity) {
+        if (quantity <= 0) {
+            System.out.println("Quantity must be greater than 0.");
+            return;
+        }
+        double cost = stock.currentPrice * quantity;
+        if (balance < cost) { //validation for balance vs cost
+            System.out.println("Insufficient balance!");
+            return;
+        }
+        balance -= cost; //else reduce balance
+        portfolio.addStock(stock.stockId, stock.name, quantity, stock.currentPrice);
+        tradeStack.push(new Trade("BUY", stock.stockId, stock.name, quantity,
+                cost));
+        System.out.printf("Bought " + quantity + " shares of " + stock.name + " for ₹%.2f\n", cost);
+    }
+    void sellStock(int stockId, int quantity, Market market) {
+        if (quantity <= 0) {
+            System.out.println("Quantity must be greater than 0.");
+            return;
+        }
+        StockHolding holding = portfolio.holdings.get(stockId);
+        if (holding == null || holding.quantity < quantity) {
+            System.out.println("Insufficient shares to sell!");
+            return;
+        }
+        Stock s = market.findStock(stockId);
+        if (s == null) {
+            System.out.println("Error: Stock not found in market.");
+            return; // Exit if stock doesn't exist
+        }
+        double revenue = s.currentPrice * quantity;
+        balance += revenue;
+        portfolio.removeStock(stockId, quantity);
+        tradeStack.push(new Trade("SELL", stockId, holding.stockName,
+                quantity, revenue));
+        System.out.printf("Sold " + quantity + " shares of %s for ₹%.2f\n",
+                holding.stockName, revenue);
+    }
+    void undoLastTrade() {
+        if (tradeStack.isEmpty()) {
+            System.out.println("No trades to undo!");
+            return;
+        }
+        Trade last = tradeStack.pop();
+        if (last.type.equals("BUY")) {
+            portfolio.removeStock(last.stockId, last.quantity);
+            balance += last.amount;
+        } else {
+            portfolio.addStock(last.stockId, last.stockName, last.quantity, last.amount /
+                    last.quantity);
+            balance -= last.amount;
+        }
+        System.out.println("Last trade undone!");
+    }
+    // Calculate and add dividends for all held stocks
+    void calculateDividends(Market market) {
+        if (portfolio.holdings.isEmpty()) {
+            System.out.println("No stocks in portfolio to receive dividends.");
+            return;
+        }
+        boolean added = false;
+        for (StockHolding h : portfolio.holdings.values()) {
+            Stock s = market.findStock(h.stockId);
+            if (s != null && s.getDividendPerShare() > 0) { // Check for > 0 dividend
+                double dividendAmount = s.getDividendPerShare() * h.quantity;
+                dividendQueue.add(new Dividend(h.stockId, dividendAmount));
+                System.out.printf("Dividend from %s added: ₹%.2f\n", s.name,
+                        dividendAmount);
+                added = true;
+            }
+        }
+        if (!added) {
+            System.out.println("No dividends available at this time.");
+        }
+    }
+    void receiveDividend() {
+        if (dividendQueue.isEmpty()) {
+            System.out.println("No dividends available.");
+            return;
+        }
+        double total = 0;
+        while (!dividendQueue.isEmpty()) {
+            Dividend d = dividendQueue.poll();
+            total += d.amountPerShare;
+        }
+        balance += total;
+        System.out.printf(" Received total dividends: ₹%.2f\n", total);
+    }
+    void viewPortfolio(Market market) {
+        portfolio.display(market);
+    }
+    void displayTradeHistory() {
+        if (tradeStack.isEmpty()) {
+            System.out.println("No trades yet.");
+            return;
+        }
+        System.out.println("\nTRADE HISTORY");
+        Stack<Trade> temp = new Stack<>();
+        while (!tradeStack.isEmpty()) {
+            Trade t = tradeStack.pop();
+            t.display();
+            temp.push(t);
+        }
+        while (!temp.isEmpty()) tradeStack.push(temp.pop());
+    }
+}
+//PORTFOLIO CLASS
+class Portfolio {
+    HashMap<Integer, StockHolding> holdings;
+    Portfolio() {
+        holdings = new HashMap<>();
+    }
+    void addStock(int stockId, String stockName, int quantity, double buyPrice) {
+        if (holdings.containsKey(stockId)) {
+            StockHolding h = holdings.get(stockId);
+            double totalCost = (h.avgBuyPrice * h.quantity) + (buyPrice * quantity);
+            h.quantity += quantity;
+            h.avgBuyPrice = totalCost / h.quantity;
+        } else {
+            holdings.put(stockId, new StockHolding(stockId, stockName, quantity,
+                    buyPrice));
+        }
+    }
+    void removeStock(int stockId, int quantity) {
+        StockHolding h = holdings.get(stockId);
+        if (h != null) {
+            h.quantity -= quantity;
+            if (h.quantity <= 0) holdings.remove(stockId);
+        }
+    }
+    void display(Market market) {
+        if (holdings.isEmpty()) {
+            System.out.println("Portfolio is empty.");
+            return;
+        }
+        System.out.println("\nYOUR PORTFOLIO");
+        double totalValue = 0;
+        double totalInvested = 0;
+        for (StockHolding h : holdings.values()) {
+            Stock s = market.findStock(h.stockId);
+            if (s != null) {
+                double currentValue = s.currentPrice * h.quantity;
+                double invested = h.avgBuyPrice * h.quantity;
+                double pl = currentValue - invested;
+                totalValue += currentValue;
+                totalInvested += invested;
+                String color = pl >= 0 ? "\u001B[32m" : "\u001B[31m";
+                System.out.printf("%s | Qty: %d | Avg: ₹%.2f | Current: ₹%.2f | P/L: %s₹%.2f\u001B[0m\n",
+                        s.name, h.quantity, h.avgBuyPrice, s.currentPrice, color, pl);
+            } else {
+// Fallback using stored name
+                System.out.printf("%s | Qty: %d | Avg: ₹%.2f\n",
+                        h.stockName, h.quantity, h.avgBuyPrice);
+            }
+        }
+        double totalPL = totalValue - totalInvested;
+        String color = totalPL >= 0 ? "\u001B[32m" : "\u001B[31m";
+        System.out.printf("\nTotal Value: ₹%.2f | Invested: ₹%.2f | P/L: %s₹%.2f\u001B[0m\n",
+                totalValue, totalInvested, color, totalPL);
+    }
+    void showAnalytics(Market market) {
+        display(market);
+    }
+}
+//STOCK HOLDING CLASS
+class StockHolding {
+    int stockId;
+    String stockName;
+    int quantity;
+    double avgBuyPrice;
+    StockHolding(int stockId, String stockName, int quantity, double avgBuyPrice) {
+        this.stockId = stockId;
+        this.stockName = stockName;
+        this.quantity = quantity;
+        this.avgBuyPrice = avgBuyPrice;
+    }
+}
+//WATCHLIST CLASS
+class Watchlist {
+    ArrayList<Integer> stockIds;
+    Watchlist() {
+        stockIds = new ArrayList<>();
+    }
+    void addStock(Stock stock) {
+        if (stock == null) {
+            System.out.println("Invalid stock.");
+            return;
+        }
+        if (!stockIds.contains(stock.stockId)) {
+            stockIds.add(stock.stockId);
+            System.out.println("Added " + stock.name + " to watchlist!");
+        } else {
+            System.out.println(stock.name + " is already in watchlist.");
+        }
+    }
+    void display(Market market) {
+        if (stockIds.isEmpty()) {
+            System.out.println("Watchlist is empty.");
+            return;
+        }
+        System.out.println("\nWATCHLIST");
+        for (int id : stockIds) {
+            Stock s = market.findStock(id);
+            if (s != null) s.display();
+        }
+    }
+}
+//TRADE CLASS
+class Trade {
+    String type;
+    int stockId;
+    String stockName;
+    int quantity;
+    double amount;
+    Trade(String type, int stockId, String stockName, int quantity, double amount) {
+        this.type = type;
+        this.stockId = stockId;
+        this.stockName = stockName;
+        this.quantity = quantity;
+        this.amount = amount;
+    }
+    void display() {
+        System.out.println(type + " | " + stockName + " | Qty: " + quantity + " | Amount: ₹" + amount);
+    }
+}
+//DIVIDEND CLASS
+class Dividend {
+    int stockId;
+    double amountPerShare;
+    Dividend(int stockId, double amountPerShare) {
+        this.stockId = stockId;
+        this.amountPerShare = amountPerShare;
+    }
+}
